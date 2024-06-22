@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Stock Portfolio Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        input, button, select {
+            margin: 5px;
+            padding: 5px;
+        }
+        #portfolios {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .portfolio {
+            background-color: #444;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px;
+            width: 45%;
+        }
+        #colorScheme, #fontColor {
+            position: fixed;
+            top: 10px;
+        }
+        #colorScheme {
+            right: 10px;
+        }
+        #fontColor {
+            right: 120px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        #coolSources {
+            background-color: #444;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        #coolSources h2 {
+            margin-top: 0;
+        }
+        #coolSources ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="coolSources">
+            <h2>Cool Sources</h2>
+            <ul>
+                <li>Grand View Research: Artificial Intelligence Market Size, Share & Trends Analysis Report (2024-2030)</li>
+                <li>Situational Awareness by Leopold Aschenbrenner: Intelligence Explosion Scenario (2018-2030)</li>
+            </ul>
+        </div>
+
+        <h1>Enhanced Stock Portfolio Simulator</h1>
+        
+        <div>
+            <input type="text" id="portfolioName" placeholder="Portfolio Name">
+            <button onclick="createPortfolio()">Create Portfolio</button>
+        </div>
+        
+        <div id="portfolios"></div>
+        
+        <div class="chart-container">
+            <canvas id="projectionChart"></canvas>
+        </div>
+        
+        <div>
+            <h2>Simulation</h2>
+            <select id="simulationType">
+                <option value="average">Yearly Average Growth</option>
+                <option value="ml">Machine Learning (Not Implemented)</option>
+            </select>
+            <button onclick="runSimulation()">Run 5-Year Simulation</button>
+        </div>
+        
+        <select id="colorScheme" onchange="changeColorScheme()">
+            <option value="default">Default</option>
+            <option value="peach">Peach</option>
+            <option value="purple">Purple</option>
+            <option value="coffee">Coffee</option>
+        </select>
+
+        <select id="fontColor" onchange="changeFontColor()">
+            <option value="white">White</option>
+            <option value="peach">Peach</option>
+            <option value="purple">Purple</option>
+            <option value="coffee">Coffee</option>
+        </select>
+    </div>
+
+    <script>
+        let portfolios = [];
+        let projectionChart;
+
+        function createPortfolio() {
+            const name = document.getElementById('portfolioName').value;
+            if (name) {
+                const portfolio = { name, stocks: [] };
+                portfolios.push(portfolio);
+                renderPortfolios();
+                document.getElementById('portfolioName').value = '';
+            }
+        }
+
+        function addStock(portfolioIndex) {
+            const stockName = prompt('Enter stock name:');
+            const stockPrice = parseFloat(prompt('Enter current stock price:'));
+            const stockQuantity = parseInt(prompt('Enter quantity of stocks:'));
+            if (stockName && !isNaN(stockPrice) && !isNaN(stockQuantity)) {
+                portfolios[portfolioIndex].stocks.push({ name: stockName, price: stockPrice, quantity: stockQuantity });
+                renderPortfolios();
+            }
+        }
+
+        function renderPortfolios() {
+            const container = document.getElementById('portfolios');
+            container.innerHTML = '';
+            portfolios.forEach((portfolio, index) => {
+                const div = document.createElement('div');
+                div.className = 'portfolio';
+                div.innerHTML = `
+                    <h3>${portfolio.name}</h3>
+                    <button onclick="addStock(${index})">Add Stock</button>
+                    <canvas id="pieChart${index}"></canvas>
+                    <ul>
+                        ${portfolio.stocks.map(stock => `<li>${stock.name}: $${stock.price.toFixed(2)} x ${stock.quantity}</li>`).join('')}
+                    </ul>
+                `;
+                container.appendChild(div);
+                renderPieChart(portfolio, index);
+            });
+        }
+
+        function renderPieChart(portfolio, index) {
+            const ctx = document.getElementById(`pieChart${index}`).getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: portfolio.stocks.map(stock => stock.name),
+                    datasets: [{
+                        data: portfolio.stocks.map(stock => stock.price * stock.quantity),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Portfolio Composition'
+                        }
+                    }
+                }
+            });
+        }
+
+        function runSimulation() {
+            const simulationType = document.getElementById('simulationType').value;
+            let projectedValues = portfolios.map(portfolio => {
+                const currentValue = portfolio.stocks.reduce((sum, stock) => sum + stock.price * stock.quantity, 0);
+                // Simple growth simulation (replace with more complex logic as needed)
+                return {
+                    name: portfolio.name,
+                    value: currentValue * Math.pow(1.1, 5) // 10% annual growth for 5 years
+                };
+            });
+
+            renderProjectionChart(projectedValues);
+        }
+
+        function renderProjectionChart(projectedValues) {
+            const ctx = document.getElementById('projectionChart').getContext('2d');
+            if (projectionChart) {
+                projectionChart.destroy();
+            }
+            projectionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: projectedValues.map(pv => pv.name),
+                    datasets: [{
+                        label: 'Projected Value in 5 Years',
+                        data: projectedValues.map(pv => pv.value),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Projected Portfolio Values (5 Years)'
+                        }
+                    }
+                }
+            });
+        }
+
+        function changeColorScheme() {
+            const scheme = document.getElementById('colorScheme').value;
+            document.body.style.backgroundColor = scheme === 'default' ? '#333' : scheme;
+        }
+
+        function changeFontColor() {
+            const color = document.getElementById('fontColor').value;
+            document.body.style.color = color;
+        }
+    </script>
+</body>
+</html>
